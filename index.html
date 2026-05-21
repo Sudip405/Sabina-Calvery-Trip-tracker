@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TripLog AU</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #f0f2f5;
+  --surface: #ffffff;
+  --surface2: #f5f6f8;
+  --border: #e2e5ea;
+  --accent: #1a56db;
+  --accent-light: #e8eefb;
+  --text: #111827;
+  --muted: #6b7280;
+  --green: #059669;
+  --green-light: #ecfdf5;
+  --amber: #d97706;
+  --amber-light: #fffbeb;
+  --red: #dc2626;
+  --radius: 16px;
+  --tab-h: 66px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; overflow: hidden; -webkit-font-smoothing: antialiased; }
+
+#app { display: flex; flex-direction: column; height: 100dvh; max-width: 480px; margin: 0 auto; }
+
+/* Header */
+.hdr { padding: 16px 18px 10px; display: flex; align-items: center; justify-content: space-between; background: var(--surface); border-bottom: 1px solid var(--border); }
+.hdr-left h1 { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; color: var(--text); }
+.hdr-left h1 span { color: var(--accent); }
+.hdr-left .sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+.hdr-right { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; text-align: right; }
+
+/* Tab bar */
+.tabs { display: flex; background: var(--surface); border-top: 1px solid var(--border); height: var(--tab-h); }
+.tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border: none; background: none; color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: 0.3px; cursor: pointer; position: relative; }
+.tab svg { width: 22px; height: 22px; stroke: currentColor; }
+.tab.active { color: var(--accent); }
+.tab.active::after { content: ''; position: absolute; top: 0; left: 20%; right: 20%; height: 2px; background: var(--accent); border-radius: 0 0 4px 4px; }
+
+/* Pages */
+.page { flex: 1; overflow-y: auto; display: none; background: var(--bg); }
+.page.active { display: block; }
+.page-inner { padding: 14px 14px 24px; }
+
+/* Section headers */
+.sec-head { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 18px 0 8px; }
+.sec-head:first-child { margin-top: 0; }
+
+/* Cards */
+.card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 10px; }
+
+/* Form rows */
+.form-row { display: flex; align-items: center; min-height: 56px; padding: 0 16px; border-bottom: 1px solid var(--border); gap: 12px; }
+.form-row:last-child { border-bottom: none; }
+.row-label { font-size: 14px; font-weight: 600; color: var(--text); flex: 0 0 auto; min-width: 110px; }
+.row-label .req { color: var(--red); margin-left: 2px; }
+.row-input { flex: 1; border: none; background: transparent; font-family: 'Inter', sans-serif; font-size: 15px; color: var(--text); text-align: right; outline: none; padding: 16px 0; min-width: 0; }
+.row-input::placeholder { color: var(--muted); font-weight: 400; }
+.row-input::-webkit-inner-spin-button { display: none; }
+select.row-input { cursor: pointer; appearance: none; -webkit-appearance: none; }
+
+/* KM live preview */
+.km-preview { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--green-light); border-bottom: 1px solid #d1fae5; }
+.km-preview .km-label { font-size: 12px; font-weight: 700; color: var(--green); text-transform: uppercase; letter-spacing: 0.5px; }
+.km-preview .km-val { font-size: 22px; font-weight: 800; color: var(--green); font-family: 'DM Mono', monospace; }
+
+/* Charge preview */
+.charge-preview { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--amber-light); border-bottom: 1px solid #fde68a; }
+.charge-preview .c-label { font-size: 12px; font-weight: 700; color: var(--amber); text-transform: uppercase; letter-spacing: 0.5px; }
+.charge-preview .c-val { font-size: 22px; font-weight: 800; color: var(--amber); font-family: 'DM Mono', monospace; }
+
+/* Toggle */
+.toggle-row { display: flex; padding: 10px 16px; gap: 8px; border-bottom: 1px solid var(--border); }
+.toggle-opt { flex: 1; padding: 11px 8px; border-radius: 10px; border: 2px solid var(--border); background: var(--surface2); font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; color: var(--muted); cursor: pointer; transition: all 0.15s; text-align: center; }
+.toggle-opt.active { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+
+/* Big save button */
+.save-wrap { padding: 14px; }
+.btn-save { width: 100%; padding: 17px; border-radius: 14px; border: none; background: var(--accent); color: #fff; font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 700; cursor: pointer; transition: opacity 0.15s, transform 0.1s; letter-spacing: -0.2px; }
+.btn-save:active { transform: scale(0.98); opacity: 0.9; }
+.btn-sec { background: var(--surface); border: 1.5px solid var(--border); color: var(--text); }
+
+/* Stats grid */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.stat-box { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; }
+.stat-val { font-size: 22px; font-weight: 800; color: var(--accent); font-family: 'DM Mono', monospace; letter-spacing: -0.5px; }
+.stat-lbl { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px; }
+
+/* Trip cards */
+.trip-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 10px; overflow: hidden; }
+.trip-main { padding: 14px 16px 10px; }
+.trip-top { display: flex; justify-content: space-between; align-items: flex-start; }
+.trip-client { font-size: 16px; font-weight: 700; color: var(--text); }
+.trip-date { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.trip-meta { font-size: 13px; color: var(--muted); margin-top: 6px; }
+.trip-purpose { font-size: 13px; font-weight: 500; color: var(--text); margin-top: 4px; }
+.del-btn { background: var(--surface2); border: none; color: var(--muted); width: 32px; height: 32px; border-radius: 8px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.edit-btn { background: var(--accent-light); border: none; color: var(--accent); width: 32px; height: 32px; border-radius: 8px; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.card-btns { display: flex; gap: 6px; }
+
+/* Edit Modal */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal-sheet { background: var(--surface); border-radius: 22px 22px 0 0; width: 100%; max-width: 480px; max-height: 92dvh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1); padding-bottom: env(safe-area-inset-bottom, 16px); }
+.modal-overlay.open .modal-sheet { transform: translateY(0); }
+.modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 12px auto 0; }
+.modal-title { font-size: 16px; font-weight: 700; padding: 14px 18px 8px; border-bottom: 1px solid var(--border); }
+.modal-body { padding: 12px 14px 20px; }
+.modal-actions { display: flex; gap: 10px; padding: 0 14px 16px; }
+.btn-danger { background: #fef2f2; color: var(--red); border: 1.5px solid #fecaca; font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 700; border-radius: 12px; padding: 14px; cursor: pointer; flex: 0 0 auto; }
+.btn-update { flex: 1; }
+.trip-footer { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 16px; border-top: 1px solid var(--border); background: var(--surface2); }
+.pill { display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; font-family: 'DM Mono', monospace; }
+.pill-green { background: var(--green-light); color: var(--green); }
+.pill-amber { background: var(--amber-light); color: var(--amber); }
+.pill-blue { background: var(--accent-light); color: var(--accent); }
+.odom-txt { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+
+/* Weekly nav */
+.week-nav { display: flex; align-items: center; gap: 10px; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 10px 14px; margin-bottom: 10px; }
+.week-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; width: 40px; height: 40px; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.week-lbl { flex: 1; text-align: center; font-size: 13px; font-weight: 600; color: var(--text); }
+
+/* Invoice */
+.inv-box { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; font-family: 'DM Mono', monospace; font-size: 13px; margin-bottom: 10px; }
+.inv-hdr { text-align: center; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px dashed var(--border); }
+.inv-hdr h2 { font-size: 20px; font-weight: 800; letter-spacing: 3px; color: var(--accent); }
+.inv-hdr p { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.inv-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 7px; font-size: 12px; }
+.inv-row .lbl { color: var(--muted); }
+.inv-divider { border: none; border-top: 1px dashed var(--border); margin: 12px 0; }
+.inv-trip { padding: 8px 0; border-bottom: 1px solid var(--border); }
+.inv-trip:last-child { border-bottom: none; }
+.inv-trip-top { display: flex; justify-content: space-between; font-weight: 600; font-size: 12px; }
+.inv-trip-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.inv-total { display: flex; justify-content: space-between; font-size: 16px; font-weight: 800; color: var(--accent); margin-top: 12px; padding-top: 12px; border-top: 2px solid var(--accent); }
+
+/* Empty */
+.empty { text-align: center; padding: 56px 24px; color: var(--muted); }
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty p { font-size: 14px; line-height: 1.6; }
+
+/* Toast */
+#toast { position: fixed; bottom: calc(var(--tab-h) + 12px); left: 50%; transform: translateX(-50%) translateY(16px); background: #111827; color: #fff; padding: 12px 22px; border-radius: 30px; font-weight: 600; font-size: 14px; opacity: 0; transition: all 0.25s; pointer-events: none; white-space: nowrap; z-index: 999; box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ===== PRINT / PDF ===== */
+@media print {
+  @page { size: A4; margin: 14mm 16mm; }
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  body { background: #fff !important; overflow: visible !important; }
+  #app { display: block !important; height: auto !important; overflow: visible !important; }
+  .hdr, .tabs, #page-log, #page-trips, #page-weekly, #toast { display: none !important; }
+  #page-invoice { display: block !important; overflow: visible !important; height: auto !important; }
+  .page-inner { padding: 0 !important; }
+  .sec-head, .card, .save-wrap, #copyWrap { display: none !important; }
+  #invoiceOut { display: block !important; }
+  .inv-box {
+    background: #fff !important; border-radius: 0 !important;
+    box-shadow: none !important; border: none !important;
+    padding: 0 !important; margin: 0 !important;
+    font-family: 'Inter', Arial, sans-serif !important; font-size: 12pt !important;
+    color: #111 !important;
+  }
+  .inv-hdr h2 { color: #1a56db !important; font-size: 24pt !important; }
+  .inv-hdr p { color: #555 !important; }
+  .inv-row .lbl { color: #555 !important; }
+  .inv-trip-sub { color: #555 !important; }
+  .inv-total { color: #1a56db !important; }
+  .inv-divider { border-top: 1px dashed #ccc !important; }
+  .inv-trip { border-bottom: 1px solid #e5e7eb !important; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="hdr">
+    <div class="hdr-left">
+      <h1>Trip<span>Log</span></h1>
+      <div class="sub">Australia 🇦🇺</div>
+    </div>
+    <div class="hdr-right" id="todayDate"></div>
+  </div>
+
+  <!-- LOG PAGE -->
+  <div class="page active" id="page-log">
+    <div class="page-inner">
+
+      <div class="sec-head">Client & Trip</div>
+      <div class="card">
+        <div class="form-row">
+          <span class="row-label">Client<span class="req">*</span></span>
+          <input class="row-input" type="text" id="client" placeholder="Client name">
+        </div>
+        <div class="form-row">
+          <span class="row-label">Date<span class="req">*</span></span>
+          <input class="row-input" type="date" id="tripDate">
+        </div>
+        <div class="form-row">
+          <span class="row-label">Vehicle<span class="req">*</span></span>
+          <input class="row-input" type="text" id="vehicle" placeholder="Rego / make">
+        </div>
+        <div class="form-row">
+          <span class="row-label">Purpose</span>
+          <input class="row-input" type="text" id="purpose" placeholder="e.g. Airport pickup">
+        </div>
+        <div class="form-row">
+          <span class="row-label">Note</span>
+          <input class="row-input" type="text" id="note" placeholder="Optional">
+        </div>
+      </div>
+
+      <div class="sec-head">Odometer (km)</div>
+      <div class="card">
+        <div class="form-row">
+          <span class="row-label">Start<span class="req">*</span></span>
+          <input class="row-input" type="number" id="odomStart" inputmode="decimal" placeholder="0" oninput="calcKm()">
+        </div>
+        <div class="form-row">
+          <span class="row-label">End<span class="req">*</span></span>
+          <input class="row-input" type="number" id="odomEnd" inputmode="decimal" placeholder="0" oninput="calcKm()">
+        </div>
+        <div class="km-preview" id="kmPreview" style="display:none">
+          <span class="km-label">KM Travelled</span>
+          <span class="km-val" id="kmDisplay">0 km</span>
+        </div>
+      </div>
+
+      <div class="sec-head">Charge (AUD)</div>
+      <div class="card">
+        <div class="toggle-row">
+          <button class="toggle-opt active" id="modeFlat" onclick="setMode('flat')">$ Flat Rate</button>
+          <button class="toggle-opt" id="modeKm" onclick="setMode('km')">$ per km</button>
+        </div>
+        <div id="flatField">
+          <div class="form-row">
+            <span class="row-label">Amount</span>
+            <input class="row-input" type="number" id="flatRate" inputmode="decimal" placeholder="e.g. 80.00">
+          </div>
+        </div>
+        <div id="kmField" style="display:none">
+          <div class="form-row">
+            <span class="row-label">Rate / km</span>
+            <input class="row-input" type="number" id="kmRate" inputmode="decimal" placeholder="e.g. 0.88" oninput="calcKm()">
+          </div>
+        </div>
+        <div class="charge-preview" id="chargePreview" style="display:none">
+          <span class="c-label">Estimated Charge</span>
+          <span class="c-val" id="chargeDisplay">$0.00</span>
+        </div>
+        <div class="save-wrap">
+          <button class="btn-save" onclick="saveTrip()">Save Trip</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TRIPS PAGE -->
+  <div class="page" id="page-trips">
+    <div class="page-inner">
+      <div class="stats-grid" id="summaryStats"></div>
+      <div class="sec-head">All Trips</div>
+      <div id="tripsList"></div>
+    </div>
+  </div>
+
+  <!-- WEEKLY PAGE -->
+  <div class="page" id="page-weekly">
+    <div class="page-inner">
+      <div class="week-nav">
+        <button class="week-btn" onclick="changeWeek(-1)">‹</button>
+        <span class="week-lbl" id="weekLabel"></span>
+        <button class="week-btn" onclick="changeWeek(1)">›</button>
+      </div>
+      <div class="stats-grid" id="weekStats"></div>
+      <div class="sec-head">Trips This Week</div>
+      <div id="weekList"></div>
+    </div>
+  </div>
+
+  <!-- INVOICE PAGE -->
+  <div class="page" id="page-invoice">
+    <div class="page-inner">
+      <div class="sec-head">Invoice Settings</div>
+      <div class="card">
+        <div class="form-row">
+          <span class="row-label">From</span>
+          <input class="row-input" type="text" id="invFrom" placeholder="Your name / business">
+        </div>
+        <div class="form-row">
+          <span class="row-label">Bill To</span>
+          <input class="row-input" type="text" id="invTo" placeholder="Client / company">
+        </div>
+        <div class="form-row">
+          <span class="row-label">ABN</span>
+          <input class="row-input" type="text" id="invAbn" placeholder="Optional">
+        </div>
+        <div class="form-row">
+          <span class="row-label">Period</span>
+          <select class="row-input" id="invPeriod">
+            <option value="week">This Week</option>
+            <option value="month">This Month</option>
+            <option value="all">All Trips</option>
+          </select>
+        </div>
+        <div class="save-wrap">
+          <button class="btn-save" onclick="generateInvoice()">Generate Invoice</button>
+        </div>
+      </div>
+      <div id="invoiceOut"></div>
+      <div id="copyWrap" style="display:none">
+        <div style="display:flex;gap:10px;margin-top:4px">
+          <button class="btn-save" style="flex:1;background:#1a56db" onclick="printInvoice()">📄 Download PDF</button>
+          <button class="btn-save btn-sec" style="flex:1" onclick="copyInvoice()">📋 Copy Text</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT MODAL -->
+  <div class="modal-overlay" id="editModal" onclick="closeModal(event)">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">✏️ Edit Trip</div>
+      <div class="modal-body">
+        <input type="hidden" id="editId">
+        <div class="sec-head">Client & Trip</div>
+        <div class="card">
+          <div class="form-row"><span class="row-label">Client<span class="req">*</span></span><input class="row-input" type="text" id="eClient" placeholder="Client name"></div>
+          <div class="form-row"><span class="row-label">Date<span class="req">*</span></span><input class="row-input" type="date" id="eDate"></div>
+          <div class="form-row"><span class="row-label">Vehicle<span class="req">*</span></span><input class="row-input" type="text" id="eVehicle" placeholder="Rego / make"></div>
+          <div class="form-row"><span class="row-label">Purpose</span><input class="row-input" type="text" id="ePurpose" placeholder="e.g. Airport pickup"></div>
+          <div class="form-row"><span class="row-label">Note</span><input class="row-input" type="text" id="eNote" placeholder="Optional"></div>
+        </div>
+        <div class="sec-head">Odometer (km)</div>
+        <div class="card">
+          <div class="form-row"><span class="row-label">Start<span class="req">*</span></span><input class="row-input" type="number" id="eOdomStart" inputmode="decimal" placeholder="0" oninput="calcEditKm()"></div>
+          <div class="form-row"><span class="row-label">End<span class="req">*</span></span><input class="row-input" type="number" id="eOdomEnd" inputmode="decimal" placeholder="0" oninput="calcEditKm()"></div>
+          <div class="km-preview" id="eKmPreview" style="display:none"><span class="km-label">KM Travelled</span><span class="km-val" id="eKmDisplay">0 km</span></div>
+        </div>
+        <div class="sec-head">Charge (AUD)</div>
+        <div class="card">
+          <div class="toggle-row">
+            <button class="toggle-opt active" id="eModeFlat" onclick="setEditMode('flat')">$ Flat Rate</button>
+            <button class="toggle-opt" id="eModeKm" onclick="setEditMode('km')">$ per km</button>
+          </div>
+          <div id="eFlatField"><div class="form-row"><span class="row-label">Amount</span><input class="row-input" type="number" id="eFlatRate" inputmode="decimal" placeholder="e.g. 80.00"></div></div>
+          <div id="eKmField" style="display:none"><div class="form-row"><span class="row-label">Rate / km</span><input class="row-input" type="number" id="eKmRate" inputmode="decimal" placeholder="e.g. 0.88" oninput="calcEditKm()"></div></div>
+          <div class="charge-preview" id="eChargePreview" style="display:none"><span class="c-label">Estimated Charge</span><span class="c-val" id="eChargeDisplay">$0.00</span></div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-danger" onclick="deleteTripFromModal()">🗑 Delete</button>
+        <button class="btn-save btn-update" onclick="updateTrip()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+    <!-- TAB BAR -->
+  <div class="tabs">
+    <button class="tab active" onclick="goTab('log',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+      Log
+    </button>
+    <button class="tab" onclick="goTab('trips',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Trips
+    </button>
+    <button class="tab" onclick="goTab('weekly',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2"><path d="M3 3v18h18"/><path d="M18 9l-6 6-4-4-5 5"/></svg>
+      Weekly
+    </button>
+    <button class="tab" onclick="goTab('invoice',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Invoice
+    </button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const DB = 'triplog_au_v1';
+let mode = 'flat', weekOffset = 0;
+
+const $ = id => document.getElementById(id);
+const load = () => { try { return JSON.parse(localStorage.getItem(DB)) || []; } catch { return []; } };
+const save = d => localStorage.setItem(DB, JSON.stringify(d));
+const aud = n => '$' + Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+const km = n => Number(n).toLocaleString('en-AU') + ' km';
+
+// Init
+$('tripDate').value = new Date().toISOString().slice(0,10);
+$('todayDate').textContent = new Date().toLocaleDateString('en-AU', {weekday:'short', day:'numeric', month:'short', year:'numeric'});
+
+function setMode(m) {
+  mode = m;
+  $('flatField').style.display = m === 'flat' ? '' : 'none';
+  $('kmField').style.display = m === 'km' ? '' : 'none';
+  $('modeFlat').classList.toggle('active', m === 'flat');
+  $('modeKm').classList.toggle('active', m === 'km');
+  calcKm();
+}
+
+function calcKm() {
+  const s = parseFloat($('odomStart').value), e = parseFloat($('odomEnd').value);
+  const kp = $('kmPreview'), cp = $('chargePreview');
+  if (!isNaN(s) && !isNaN(e) && e > s) {
+    const dist = e - s;
+    $('kmDisplay').textContent = dist.toLocaleString('en-AU') + ' km';
+    kp.style.display = 'flex';
+    if (mode === 'km') {
+      const rate = parseFloat($('kmRate').value) || 0;
+      $('chargeDisplay').textContent = aud(rate * dist);
+      cp.style.display = 'flex';
+    } else cp.style.display = 'none';
+  } else { kp.style.display = 'none'; cp.style.display = 'none'; }
+}
+
+function goTab(tab, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  $('page-' + tab).classList.add('active');
+  el.classList.add('active');
+  if (tab === 'trips') renderTrips();
+  if (tab === 'weekly') renderWeekly();
+}
+
+function toast(msg, ok) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.style.background = ok === false ? '#dc2626' : '#111827';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+function saveTrip() {
+  const client = $('client').value.trim();
+  const date = $('tripDate').value;
+  const vehicle = $('vehicle').value.trim();
+  const s = parseFloat($('odomStart').value);
+  const e = parseFloat($('odomEnd').value);
+  const purpose = $('purpose').value.trim();
+  const note = $('note').value.trim();
+
+  if (!client) { toast('⚠ Enter a client name', false); $('client').focus(); return; }
+  if (!date) { toast('⚠ Pick a date', false); return; }
+  if (!vehicle) { toast('⚠ Enter vehicle details', false); $('vehicle').focus(); return; }
+  if (isNaN(s) || isNaN(e)) { toast('⚠ Enter both odometer readings', false); return; }
+  if (e <= s) { toast('⚠ End odometer must be greater than start', false); return; }
+
+  const dist = e - s;
+  let charge = 0, rateLabel = '';
+  if (mode === 'flat') {
+    charge = parseFloat($('flatRate').value) || 0;
+    rateLabel = 'flat';
+  } else {
+    const rate = parseFloat($('kmRate').value) || 0;
+    charge = rate * dist;
+    rateLabel = aud(rate) + '/km';
+  }
+
+  const trips = load();
+  trips.unshift({ id: Date.now(), date, client, vehicle, odomStart: s, odomEnd: e, km: dist, purpose, note, charge, mode, rateLabel });
+  save(trips);
+  toast('✅ Trip saved!');
+
+  ['client','odomStart','odomEnd','purpose','note','flatRate','kmRate'].forEach(id => $(id).value = '');
+  $('tripDate').value = new Date().toISOString().slice(0,10);
+  $('kmPreview').style.display = 'none';
+  $('chargePreview').style.display = 'none';
+}
+
+function deleteTrip(id) {
+  if (!confirm('Delete this trip?')) return;
+  save(load().filter(t => t.id !== id));
+  renderTrips();
+  toast('Trip deleted');
+}
+
+function tripCard(t) {
+  return `<div class="trip-card">
+    <div class="trip-main">
+      <div class="trip-top">
+        <div>
+          <div class="trip-client">${t.client}</div>
+          <div class="trip-date">${new Date(t.date).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric'})} · ${t.vehicle}</div>
+          ${t.purpose ? `<div class="trip-purpose">📍 ${t.purpose}</div>` : ''}
+          ${t.note ? `<div class="trip-meta">💬 ${t.note}</div>` : ''}
+        </div>
+        <div class="card-btns">
+          <button class="edit-btn" onclick="openEdit(${t.id})">✏️</button>
+          <button class="del-btn" onclick="deleteTrip(${t.id})">×</button>
+        </div>
+      </div>
+    </div>
+    <div class="trip-footer">
+      <span class="pill pill-green">${km(t.km)}</span>
+      <span class="odom-txt">${t.odomStart.toLocaleString()}→${t.odomEnd.toLocaleString()}</span>
+      <span class="pill pill-amber">${aud(t.charge)}</span>
+      ${t.rateLabel && t.rateLabel !== 'flat' ? `<span class="pill pill-blue">${t.rateLabel}</span>` : ''}
+    </div>
+  </div>`;
+}
+
+function statBox(val, lbl) {
+  return `<div class="stat-box"><div class="stat-val">${val}</div><div class="stat-lbl">${lbl}</div></div>`;
+}
+
+function renderTrips() {
+  const trips = load();
+  const totKm = trips.reduce((a,t)=>a+t.km,0);
+  const totAud = trips.reduce((a,t)=>a+t.charge,0);
+  $('summaryStats').innerHTML =
+    statBox(trips.length,'Trips') +
+    statBox(km(totKm),'Total km') +
+    statBox(aud(totAud),'Total Earned') +
+    statBox(trips.length ? aud(totAud/trips.length) : '$0','Avg/Trip');
+  $('tripsList').innerHTML = trips.length
+    ? trips.map(tripCard).join('')
+    : `<div class="empty"><div class="empty-icon">🚗</div><p>No trips yet.<br>Log your first trip using the + tab.</p></div>`;
+}
+
+function getWeekRange(off) {
+  const now = new Date();
+  const day = now.getDay();
+  const mon = new Date(now);
+  mon.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + off * 7);
+  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  return { mon, sun };
+}
+
+function changeWeek(d) { weekOffset += d; renderWeekly(); }
+
+function renderWeekly() {
+  const { mon, sun } = getWeekRange(weekOffset);
+  const ms = mon.toISOString().slice(0,10), ss = sun.toISOString().slice(0,10);
+  $('weekLabel').textContent =
+    mon.toLocaleDateString('en-AU',{day:'numeric',month:'short'}) + ' – ' +
+    sun.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
+  const trips = load().filter(t => t.date >= ms && t.date <= ss);
+  const totKm = trips.reduce((a,t)=>a+t.km,0);
+  const totAud = trips.reduce((a,t)=>a+t.charge,0);
+  $('weekStats').innerHTML =
+    statBox(trips.length,'Trips') +
+    statBox(km(totKm),'Distance') +
+    statBox(aud(totAud),'Earned') +
+    statBox(trips.length ? aud(totAud/trips.length) : '$0','Avg/Trip');
+  $('weekList').innerHTML = trips.length
+    ? trips.map(tripCard).join('')
+    : `<div class="empty"><div class="empty-icon">📅</div><p>No trips logged this week.</p></div>`;
+}
+
+function generateInvoice() {
+  const from = $('invFrom').value.trim() || 'Driver';
+  const to = $('invTo').value.trim() || 'Client';
+  const abn = $('invAbn').value.trim();
+  const period = $('invPeriod').value;
+  const all = load();
+  const now = new Date();
+
+  let trips = all, periodLabel = 'All Trips';
+  if (period === 'week') {
+    const { mon, sun } = getWeekRange(0);
+    trips = all.filter(t => t.date >= mon.toISOString().slice(0,10) && t.date <= sun.toISOString().slice(0,10));
+    periodLabel = 'This Week';
+  } else if (period === 'month') {
+    const m = now.toISOString().slice(0,7);
+    trips = all.filter(t => t.date.startsWith(m));
+    periodLabel = now.toLocaleDateString('en-AU',{month:'long',year:'numeric'});
+  }
+  if (!trips.length) { toast('No trips for this period', false); return; }
+
+  const total = trips.reduce((a,t)=>a+t.charge,0);
+  const totKm = trips.reduce((a,t)=>a+t.km,0);
+  const gst = total / 11;
+  const invNum = 'INV-' + Date.now().toString().slice(-6);
+  const invDate = now.toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'});
+
+  const rows = trips.map(t => `
+    <div class="inv-trip">
+      <div class="inv-trip-top">
+        <span>${new Date(t.date).toLocaleDateString('en-AU',{day:'numeric',month:'short'})} · ${t.client}</span>
+        <span>${aud(t.charge)}</span>
+      </div>
+      <div class="inv-trip-sub">${t.vehicle}${t.purpose?' · '+t.purpose:''} · ${km(t.km)} (${t.odomStart.toLocaleString()}→${t.odomEnd.toLocaleString()})</div>
+    </div>`).join('');
+
+  $('invoiceOut').innerHTML = `<div class="inv-box">
+    <div class="inv-hdr"><h2>TAX INVOICE</h2><p>${invNum} · ${invDate}</p></div>
+    <div class="inv-row"><span class="lbl">From</span><span>${from}</span></div>
+    ${abn ? `<div class="inv-row"><span class="lbl">ABN</span><span>${abn}</span></div>` : ''}
+    <div class="inv-row"><span class="lbl">Bill To</span><span>${to}</span></div>
+    <div class="inv-row"><span class="lbl">Period</span><span>${periodLabel}</span></div>
+    <hr class="inv-divider">
+    <div class="inv-row"><span class="lbl">Trips</span><span>${trips.length}</span></div>
+    <div class="inv-row"><span class="lbl">Total Distance</span><span>${km(totKm)}</span></div>
+    <hr class="inv-divider">
+    ${rows}
+    <hr class="inv-divider">
+    <div class="inv-row"><span class="lbl">Subtotal (excl. GST)</span><span>${aud(total - gst)}</span></div>
+    <div class="inv-row"><span class="lbl">GST (10%)</span><span>${aud(gst)}</span></div>
+    <div class="inv-total"><span>TOTAL DUE</span><span>${aud(total)}</span></div>
+  </div>`;
+  $('copyWrap').style.display = '';
+}
+
+function printInvoice() {
+  // Switch to invoice tab visually so @media print picks it up
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  $('page-invoice').classList.add('active');
+  setTimeout(() => window.print(), 100);
+}
+
+function copyInvoice() {
+  const text = $('invoiceOut').innerText;
+  if (navigator.clipboard) navigator.clipboard.writeText(text).then(()=>toast('✅ Copied!'));
+  else {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    toast('✅ Copied!');
+  }
+}
+
+// ===== EDIT MODAL =====
+let editMode = 'flat';
+
+function openEdit(id) {
+  const t = load().find(x => x.id === id);
+  if (!t) return;
+  $('editId').value = id;
+  $('eClient').value = t.client || '';
+  $('eDate').value = t.date || '';
+  $('eVehicle').value = t.vehicle || '';
+  $('ePurpose').value = t.purpose || '';
+  $('eNote').value = t.note || '';
+  $('eOdomStart').value = t.odomStart || '';
+  $('eOdomEnd').value = t.odomEnd || '';
+  setEditMode(t.mode || 'flat');
+  if (t.mode === 'flat') $('eFlatRate').value = t.charge || '';
+  else {
+    const rate = t.km > 0 ? (t.charge / t.km) : 0;
+    $('eKmRate').value = rate ? rate.toFixed(4) : '';
+  }
+  calcEditKm();
+  $('editModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(e) {
+  if (e && e.target !== $('editModal')) return;
+  $('editModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function setEditMode(m) {
+  editMode = m;
+  $('eFlatField').style.display = m === 'flat' ? '' : 'none';
+  $('eKmField').style.display = m === 'km' ? '' : 'none';
+  $('eModeFlat').classList.toggle('active', m === 'flat');
+  $('eModeKm').classList.toggle('active', m === 'km');
+  calcEditKm();
+}
+
+function calcEditKm() {
+  const s = parseFloat($('eOdomStart').value), e = parseFloat($('eOdomEnd').value);
+  if (!isNaN(s) && !isNaN(e) && e > s) {
+    const dist = e - s;
+    $('eKmDisplay').textContent = dist.toLocaleString('en-AU') + ' km';
+    $('eKmPreview').style.display = 'flex';
+    if (editMode === 'km') {
+      const rate = parseFloat($('eKmRate').value) || 0;
+      $('eChargeDisplay').textContent = aud(rate * dist);
+      $('eChargePreview').style.display = 'flex';
+    } else $('eChargePreview').style.display = 'none';
+  } else {
+    $('eKmPreview').style.display = 'none';
+    $('eChargePreview').style.display = 'none';
+  }
+}
+
+function updateTrip() {
+  const id = parseInt($('editId').value);
+  const client = $('eClient').value.trim();
+  const date = $('eDate').value;
+  const vehicle = $('eVehicle').value.trim();
+  const s = parseFloat($('eOdomStart').value);
+  const e = parseFloat($('eOdomEnd').value);
+  const purpose = $('ePurpose').value.trim();
+  const note = $('eNote').value.trim();
+
+  if (!client) { toast('⚠ Enter a client name', false); return; }
+  if (!date) { toast('⚠ Pick a date', false); return; }
+  if (!vehicle) { toast('⚠ Enter vehicle details', false); return; }
+  if (isNaN(s) || isNaN(e)) { toast('⚠ Enter both odometer readings', false); return; }
+  if (e <= s) { toast('⚠ End must be greater than start', false); return; }
+
+  const dist = e - s;
+  let charge = 0, rateLabel = '';
+  if (editMode === 'flat') {
+    charge = parseFloat($('eFlatRate').value) || 0;
+    rateLabel = 'flat';
+  } else {
+    const rate = parseFloat($('eKmRate').value) || 0;
+    charge = rate * dist;
+    rateLabel = aud(rate) + '/km';
+  }
+
+  const trips = load().map(t =>
+    t.id === id ? { ...t, date, client, vehicle, odomStart: s, odomEnd: e, km: dist, purpose, note, charge, mode: editMode, rateLabel } : t
+  );
+  save(trips);
+  $('editModal').classList.remove('open');
+  document.body.style.overflow = '';
+  toast('✅ Trip updated!');
+  renderTrips();
+}
+
+function deleteTripFromModal() {
+  const id = parseInt($('editId').value);
+  if (!confirm('Delete this trip?')) return;
+  save(load().filter(t => t.id !== id));
+  $('editModal').classList.remove('open');
+  document.body.style.overflow = '';
+  toast('Trip deleted');
+  renderTrips();
+}
+</script>
+</body>
+</html>
